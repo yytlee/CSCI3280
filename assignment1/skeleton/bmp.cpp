@@ -2,9 +2,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>
+#include <algorithm>
 #include <windows.h>
 
 #define SafeFree(p)  { if(p) { free(p); p = NULL; } }
+using namespace std;
 
 
 Bitmap::Bitmap()
