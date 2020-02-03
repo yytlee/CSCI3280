@@ -35,9 +35,6 @@ int main(int argc, char** argv)
 	int imagesize = 0;
 	int patchsize = 0;
 	Bitmap image_data(argv[1]); 
-	int c = image_data.getWidth();
-	int a = image_data.getHeight();
-	cout << a << " " << c << endl;
 
 	if(sscanf(argv[2], "%d", &imagesize) != 1){
 		cout << "Error: input format should be [halftone <input.bmp> <size1> <size2>]" << endl;
@@ -51,7 +48,6 @@ int main(int argc, char** argv)
 	image_data.resize(imagesize);
 	int img_w = image_data.getWidth();
 	int img_h = image_data.getHeight();
-	cout << img_h << " " << img_w << endl;
 	unsigned char r;
 	unsigned char g;
 	unsigned char b;
