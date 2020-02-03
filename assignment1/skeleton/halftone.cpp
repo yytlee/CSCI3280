@@ -35,8 +35,8 @@ int main(int argc, char** argv)
 	int imagesize = 0;
 	int patchsize = 0;
 	Bitmap image_data(argv[1]); 
-	int a = image_data.getHeight();
 	int c = image_data.getWidth();
+	int a = image_data.getHeight();
 	cout << a << " " << c << endl;
 
 	if(sscanf(argv[2], "%d", &imagesize) != 1){
@@ -49,10 +49,9 @@ int main(int argc, char** argv)
 	}
 
 	image_data.resize(imagesize);
-	a = image_data.getHeight();
-	c = image_data.getWidth();
-	cout << a << " " << c << endl;
-	image_data.save("x.bmp");
+	int img_w = image_data.getWidth();
+	int img_h = image_data.getHeight();
+	cout << img_h << " " << img_w << endl;
 	unsigned char r;
 	unsigned char g;
 	unsigned char b;
@@ -65,29 +64,28 @@ int main(int argc, char** argv)
 		cout << "Error: patch files cannot open" << endl;
 		exit(0);
 	}
-	if(!bmp_patch[0].create("./patch/1.bmp")){
+	if(!bmp_patch[1].create("./patch/1.bmp")){
 		cout << "Error: patch files cannot open" << endl;
 		exit(0);
 	}
-	if(!bmp_patch[0].create("./patch/2.bmp")){
+	if(!bmp_patch[2].create("./patch/2.bmp")){
 		cout << "Error: patch files cannot open" << endl;
 		exit(0);
 	}
 	for(int i = 0; i < 3; i++){
 		bmp_patch[i].resize(patchsize);
 	}
-	imagesize = image_data.getWidth();
 	patchsize = bmp_patch[0].getWidth();
 	//
 	//	3. Obtain Luminance
 	//
-	unsigned char* y = (unsigned char*)malloc(sizeof(unsigned char) * imagesize * imagesize);
-	for(int i = 0; i < imagesize; i++){
-		for(int j = 0; j < imagesize; j++){
+	unsigned char* y = (unsigned char*)malloc(sizeof(unsigned char) * img_w * img_h);
+	for(int i = 0; i < img_w; i++){
+		for(int j = 0; j < img_h; j++){
 			image_data.getColor(i, j, r, g, b);
-			y[i + j * imagesize] = 0.299 * r + 0.587 * g + 0.114 * b;
-			image_data.setColor(i, j, y[i + j * imagesize], y[i + j * imagesize], y[i + j * imagesize]);
-			y[i + j * imagesize] /= 85;
+			y[i + j * img_w] = 0.299 * r + 0.587 * g + 0.114 * b;
+			image_data.setColor(i, j, y[i + j * img_w], y[i + j * img_w], y[i + j * img_w]);
+			y[i + j * img_w] /= 85;
 		}
 	}
 
@@ -98,18 +96,17 @@ int main(int argc, char** argv)
 	//
 	//  5. Generate bmp image and parse patches according to quantized image
 	//
-	Bitmap new_img(imagesize * patchsize, imagesize * patchsize);
-	for(int i = 0; i < imagesize * patchsize; i++){
+	Bitmap new_img(img_w * patchsize, img_h * patchsize);
+	for(int i = 0; i < img_w * patchsize; i++){
 		int patch_i = i % patchsize;
-		for(int j = 0; j < imagesize * patchsize; j++){
+		for(int j = 0; j < img_h * patchsize; j++){
 			int patch_j = j % patchsize;
-			int patch_num = (int)y[i / patchsize + j / patchsize * imagesize];
+			int patch_num = (int)y[i / patchsize + j / patchsize * img_w];
 			bmp_patch[patch_num].getColor(patch_i, patch_j, r, g, b);
 			new_img.setColor(i, j, r, g, b);
 		}
 	}
 	new_img.save("a.bmp");
-	
 	//  free memory
 	free(y);
 
