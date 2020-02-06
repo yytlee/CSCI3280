@@ -83,9 +83,6 @@ int main(int argc, char** argv)
 			int patch_num = (0.299 * r + 0.587 * g + 0.114 * b) / 85;
 			//image_data.setColor(i, j, y[i + j * img_w], y[i + j * img_w], y[i + j * img_w]);
 			if(patch_num > 2)patch_num = 2;
-			if(patch_num != 0 && patch_num != 1 && patch_num != 2){
-				cout << "bug" << " " << i << " " << j << " " << patch_num << endl;
-			}
 			for(int k = 0; k < patchsize; k++){
 				for(int l = 0; l < patchsize; l++){
 					bmp_patch[patch_num].getColor(k, l, r, g, b);

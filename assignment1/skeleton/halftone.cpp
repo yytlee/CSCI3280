@@ -102,7 +102,7 @@ int main(int argc, char** argv)
 			new_img.setColor(i, j, r, g, b);
 		}
 	}
-	new_img.save("a.bmp");
+	new_img.save("output.bmp");
 	//  free memory
 	free(y);
 
