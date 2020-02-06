@@ -1,4 +1,5 @@
 *.exe
 *.vscode
+*.vs
 *.obj
-/_MACOSX/
+./_MACOSX/
