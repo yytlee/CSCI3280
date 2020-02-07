@@ -11,6 +11,8 @@ halftone.cpp
 
 #include "bmp.h"		//	Simple .bmp library
 #include <iostream>
+#include <ostream>
+#include <cmath>
 
 #define MAX_SHADES 3
 
@@ -20,13 +22,7 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
-	//
-	//	Your code goes here ....
-	//
 	//	1. Open BMP file 
-	//  you can use the following parameters for testing,
-	//  remember to modify it based on the user input.
-
 	if(argc != 4){
 		cout << "Error: input format should be [halftone <input.bmp> <size1> <size2>]" << endl;
 		return(-1);
@@ -74,15 +70,40 @@ int main(int argc, char** argv)
 	//
 	//	3. Obtain Luminance
 	//
+	image_data.getColor(0, 0, r, g, b);
+	unsigned char grey = 0.299 * r + 0.587 * g + 0.114 * b;
+	unsigned char _max = grey;
+	unsigned char _min = grey;
 	Bitmap new_img(img_w * patchsize, img_h * patchsize);
-	//unsigned char* y = (unsigned char*)malloc(sizeof(unsigned char) * img_w * img_h);
+	unsigned char* y = (unsigned char*)malloc(sizeof(unsigned char) * img_w * img_h);
 	for(int i = 0; i < img_w; i++){
 		for(int j = 0; j < img_h; j++){
 			image_data.getColor(i, j, r, g, b);
-			//y[i + j * img_w] = 0.299 * r + 0.587 * g + 0.114 * b;
-			int patch_num = (0.299 * r + 0.587 * g + 0.114 * b) / 85;
-			//image_data.setColor(i, j, y[i + j * img_w], y[i + j * img_w], y[i + j * img_w]);
-			if(patch_num > 2)patch_num = 2;
+			grey = 0.299 * r + 0.587 * g + 0.114 * b;
+			if(grey > _max)_max = grey;
+			if(grey < _min)_min = grey;
+		}
+	}
+	//
+	//	4. Quantization
+	//
+	unsigned char div = ((_max - _min)/MAX_SHADES) + _min;
+	for(int i = 0; i < img_w; i++){
+		for(int j = 0; j < img_h; j++){
+			image_data.getColor(i, j, r, g, b);
+			grey = 0.299 * r + 0.587 * g + 0.114 * b;
+			y[i + j * img_w] = grey / div;
+			if(y[i + j * img_w] >= MAX_SHADES)y[i + j * img_w] = MAX_SHADES - 1;
+		}
+	}
+
+	//
+	//  5. Generate bmp image and parse patches according to quantized image
+	//
+
+	for(int i = 0; i < img_w; i++){
+		for(int j = 0; j < img_h; j++){
+			int patch_num = y[i + j * img_w];
 			for(int k = 0; k < patchsize; k++){
 				for(int l = 0; l < patchsize; l++){
 					bmp_patch[patch_num].getColor(k, l, r, g, b);
@@ -91,52 +112,93 @@ int main(int argc, char** argv)
 			}
 		}
 	}
-	//image_data.save("gray.bmp");
-
-	//
-	//	4. Quantization
-	//
-
-	//
-	//  5. Generate bmp image and parse patches according to quantized image
-	//
-	// cout << img_w << " " << img_h << endl;
-	// for(int i = 0; i < img_w * patchsize; i++){
-	// 	int patch_i = i % patchsize;
-	// 	for(int j = 0; j < img_h * patchsize; j++){
-	// 		//cout << i << " " << j << " ";
-	// 		int patch_j = j % patchsize;
-	// 		//cout << i / patchsize + j / patchsize * img_w;
-	// 		int patch_num = (int)y[i / patchsize + j / patchsize * img_w];
-	// 		//cout << i / patchsize + j / patchsize * img_w;
-	// 		//cout << patch_num << " ";
-	// 		cout << patch_i << " " << patch_j << endl;
-	// 		//bmp_patch[patch_num].getColor(patch_i, patch_j, r, g, b);
-	// 		//cout << i / patchsize + j / patchsize * img_w;
-	// 		new_img.setColor(i, j, r, g, b);
-	// 		//cout << i / patchsize + j / patchsize * img_w << endl;
-	// 	}
-	// 	cout << endl;
-	// //new_img.save("output.bmp");
-	// }
-	// for(int i = 0; i < img_w; i++){
-	// 	for(int j = 0; j < img_h; j++){
-	// 		int patch_num = y[i + j * img_w];
-	// 		if(patch_num != 0 && patch_num != 1 && patch_num != 2){
-	// 			cout << "bug" << " " << i << " " << j << " " << patch_num << endl;
-	// 		}
-	// 		for(int k = 0; k < patchsize; k++){
-	// 			for(int l = 0; l < patchsize; l++){
-	// 				bmp_patch[patch_num].getColor(k, l, r, g, b);
-	// 				new_img.setColor(i * patchsize + k, j * patchsize + l, r, g, b);
-	// 			}
-	// 		}
-	// 	}
-	// }
-	new_img.save("output.bmp");
-	cout << "done";
+	new_img.save("output_bonus.bmp");
+	cout << "standard output image printed" << endl;
 	//  free memory
-	//free(y);
+	free(y);
+
+	// menu
+	Bitmap input(argv[1]); 
+	img_w = input.getWidth();
+	img_h = input.getHeight();
+	Bitmap img;
+	double scale_w;
+	double scale_h;
+
+	int mode = 0;
+	while(mode == 0){
+		cout << "menu" << endl;
+		cout << "Option 1: Resize to specific width and height" << endl;
+		cout << "Option 2: Geneate anti-white image" << endl;
+		cout << "Option 3: Generate darken image" << endl;
+		cout << "Otherwise: Exit" << endl;
+		cin >> mode;
+		switch(mode){
+			case 1: 
+				cout << "Resize to specific width and height" << endl;
+				cout << "Input the width and height in order: ";
+				int _w, _h;
+				cin >> _w >> _h;
+				img.create(_w, _h);
+				scale_w = img_w / (double)(_w);
+				scale_h = img_h / (double)(_h);
+				for(int i = 0; i < _w; i++){
+					for(int j = 0; j < _h; j++){
+						int flw = floor(scale_w * i);
+						int clw = ceil(scale_w * i);
+						int flh = floor(scale_h * j);
+						int clh = ceil(scale_h * j);
+						if(flh >= img_h) flh = img_h - 1;
+						if(flw >= img_w) flw = img_w - 1;
+						if(clh >= img_h) clh = img_h - 1;
+						if(clw >= img_w) clw = img_w - 1;
+						unsigned char fr, fg, fb, cr, cg, cb;
+						input.getColor(flw, flh, fr, fg, fb);
+						input.getColor(clw, clh, cr, cg, cb);
+						r = (fr + cr) / 2;
+						g = (fg + cg) / 2;
+						b = (fb + cb) / 2;
+						img.setColor(i, j, r, g, b);
+					}
+				}
+				img.save("resize_img.bmp");
+				cout << "resize_img.bmp generated successfully" << endl;
+				mode = 0;
+				break;
+
+			case 2:
+				for(int i = 0; i < img_w; i++){
+					for(int j = 0; j < img_h; j++){
+						input.getColor(i, j, r, g, b);
+						int _r = 255 - (int)r;
+						int _g = 255 - (int)g;
+						int _b = 255 - (int)b;
+						input.setColor(i, j, _r, _g, _b);
+					}
+				}
+				input.save("Anti-White.bmp");
+				cout << "Anti-White.bmp generated successfully" << endl;
+				mode = 0;
+				break;
+			case 3:
+				for(int i = 0; i < img_w; i++){
+					for(int j = 0; j < img_h; j++){
+						input.getColor(i, j, r, g, b);
+						int _r = r, _g = g, _b = b;
+						if((int)r > 255/2)_r = 255 - (int)r;
+						if((int)g > 255/2)_g = 255 - (int)g;
+						if((int)b > 255/2)_b = 255 - (int)b;
+						input.setColor(i, j, _r, _g, _b);
+					}
+				}
+				input.save("dark.bmp");
+				cout << "dark.bmp generated successfully" << endl;
+				mode = 0;
+				break;
+			default:
+				mode = 999;
+		}
+	}
 
 	return 0;
 } 

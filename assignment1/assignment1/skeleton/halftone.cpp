@@ -91,8 +91,6 @@ int main(int argc, char** argv)
 			}
 		}
 	}
-	//image_data.save("gray.bmp");
-
 	//
 	//	4. Quantization
 	//
@@ -100,43 +98,9 @@ int main(int argc, char** argv)
 	//
 	//  5. Generate bmp image and parse patches according to quantized image
 	//
-	// cout << img_w << " " << img_h << endl;
-	// for(int i = 0; i < img_w * patchsize; i++){
-	// 	int patch_i = i % patchsize;
-	// 	for(int j = 0; j < img_h * patchsize; j++){
-	// 		//cout << i << " " << j << " ";
-	// 		int patch_j = j % patchsize;
-	// 		//cout << i / patchsize + j / patchsize * img_w;
-	// 		int patch_num = (int)y[i / patchsize + j / patchsize * img_w];
-	// 		//cout << i / patchsize + j / patchsize * img_w;
-	// 		//cout << patch_num << " ";
-	// 		cout << patch_i << " " << patch_j << endl;
-	// 		//bmp_patch[patch_num].getColor(patch_i, patch_j, r, g, b);
-	// 		//cout << i / patchsize + j / patchsize * img_w;
-	// 		new_img.setColor(i, j, r, g, b);
-	// 		//cout << i / patchsize + j / patchsize * img_w << endl;
-	// 	}
-	// 	cout << endl;
-	// //new_img.save("output.bmp");
-	// }
-	// for(int i = 0; i < img_w; i++){
-	// 	for(int j = 0; j < img_h; j++){
-	// 		int patch_num = y[i + j * img_w];
-	// 		if(patch_num != 0 && patch_num != 1 && patch_num != 2){
-	// 			cout << "bug" << " " << i << " " << j << " " << patch_num << endl;
-	// 		}
-	// 		for(int k = 0; k < patchsize; k++){
-	// 			for(int l = 0; l < patchsize; l++){
-	// 				bmp_patch[patch_num].getColor(k, l, r, g, b);
-	// 				new_img.setColor(i * patchsize + k, j * patchsize + l, r, g, b);
-	// 			}
-	// 		}
-	// 	}
-	// }
+
 	new_img.save("output.bmp");
 	cout << "done";
 	//  free memory
-	//free(y);
-
 	return 0;
 } 
