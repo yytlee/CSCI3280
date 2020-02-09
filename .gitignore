@@ -2,4 +2,6 @@
 *.vscode
 *.vs
 *.obj
-./_MACOSX/
+*/__MACOSX/
+*/henry/
+*.zip
