@@ -3,6 +3,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <cmath>
 
 using namespace std;
 
@@ -56,16 +57,68 @@ int main(int argc, char** argv)
 	Bitmap targetView(Resolution_Col, Resolution_Row);
 	cout << "Synthesizing image from viewpoint: (" << Vx << "," << Vy << "," << Vz << ") with focal length: " << targetFocalLen << endl;
 	//! resample pixels of the target view one by one
+	double grid_w = Image_Width / (double)Resolution_Row;
+	double grid_h = Image_Height / (double)Resolution_Col;
 	for (int r = 0; r < Resolution_Row; r++)
 	{
 		for (int c = 0; c < Resolution_Col; c++)
 		{
 			Point3d rayRGB(0, 0, 0);
 			//! resample the pixel value of this ray: TODO
+			Point3d pix(0, 0, 0);
+			pix.x = grid_w * r - Image_Width / 2 + grid_w;
+			pix.y = grid_h * c - Image_Height / 2 + grid_h;
+			pix.z = -targetFocalLen;
+
+			Point2d plane(0, 0);
+			plane.x = pix.x;
+			plane.y = pix.y;
+
+			if(Vz != 0){
+				plane.x = Vx - (((Vx - pix.x) * Vz) / Vz + targetFocalLen);
+				plane.y = Vy - (((Vy - pix.y) * Vz) / Vz + targetFocalLen);
+			}
+			//cout << "px: " << plane.x << " " << "py: " << plane.y << " ";
+			plane.x += Baseline * 4;
+			plane.y += Baseline * 4;
+			int ceil_x = ceil(plane.x / Baseline);
+			int floor_x = floor(plane.x / Baseline);
+			int ceil_y = ceil(plane.y / Baseline);
+			int floor_y = floor(plane.y / Baseline);
+
+			//cout << floor_x << " " << ceil_x << " " << ceil_y << " " << floor_y << " "  << endl;
+
+			// Point2d offset(, plane.y % Baseline);
+			// offset.x = plane.x - ;
+
+			Color ray;
+				
+			// }
+			double alpha = plane.x - floor_x * Baseline;
+			double beta = plane.y - floor_y * Baseline;
+			cout << alpha << " " << beta << endl;
+			Color pt, pta, ptb, ptab;
+			viewImageList[floor_x * View_Grid_Col + floor_y].getColor(c, r, pt.R, pt.G, pt.B);
+			viewImageList[floor_x * View_Grid_Col + ceil_y].getColor(c, r, pta.R, pta.G, pta.B);
+			viewImageList[ceil_x * View_Grid_Col + floor_y].getColor(c, r, ptb.R, ptb.G, ptb.B);
+			viewImageList[ceil_x * View_Grid_Col + ceil_y].getColor(c, r, ptab.R, ptab.G, ptab.B);
+			cout << ceil_x * View_Grid_Col + ceil_y << " " << ceil_x * View_Grid_Col + floor_y << " " << floor_x * View_Grid_Col + ceil_y << " " << floor_x * View_Grid_Col + floor_y << endl;
+			Color p0, p1, ptarget;
+			p0.R = (1 - alpha) * pt.R + alpha * pta.R;
+			p1.R = (1 -alpha) * ptb.R + alpha * ptab.R;
+			ptarget.R = (1 - beta) * p0.R + beta * p1.R;
+
+			p0.G = (1 - alpha) * pt.G + alpha * pta.G;
+			p1.G = (1 -alpha) * ptb.G + alpha * ptab.G;
+			ptarget.G = (1 - beta) * p0.G + beta * p1.G;
+
+			p0.B = (1 - alpha) * pt.B + alpha * pta.B;
+			p1.B = (1 -alpha) * ptb.B + alpha * ptab.B;
+			ptarget.B = (1 - beta) * p0.B + beta * p1.B;
 
 
 			//! record the resampled pixel value
-			targetView.setColor(c, r, unsigned char(rayRGB.x), unsigned char(rayRGB.y), unsigned char(rayRGB.z));
+			targetView.setColor(c, r, ptarget.R, ptarget.G, ptarget.B);
 		}
 	}
 	string savePath = "newView.bmp";
