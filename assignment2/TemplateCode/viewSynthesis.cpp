@@ -66,18 +66,16 @@ int main(int argc, char** argv)
 			Point3d rayRGB(0, 0, 0);
 			//! resample the pixel value of this ray: TODO
 			Point3d pix(0, 0, 0);
-			pix.x = grid_w * r - Image_Width / 2 + grid_w;
-			pix.y = grid_h * c - Image_Height / 2 + grid_h;
-			pix.z = -targetFocalLen;
+			// pix.x = grid_w * r - Image_Width / 2 + grid_w / 2;
+			// pix.y = grid_h * c - Image_Height / 2 + grid_h / 2;
+			// pix.z = -targetFocalLen;
 
 			Point2d plane(0, 0);
-			plane.x = pix.x;
-			plane.y = pix.y;
+			// plane.x = (targetFocalLen + Focal_Length) / pix.x;
+			// plane.y = (targetFocalLen + Focal_Length) / pix.y;
+			plane.x = Vx;
+			plane.y = Vy;
 
-			if(Vz != 0){
-				plane.x = Vx - (((Vx - pix.x) * Vz) / Vz + targetFocalLen);
-				plane.y = Vy - (((Vy - pix.y) * Vz) / Vz + targetFocalLen);
-			}
 			//cout << "px: " << plane.x << " " << "py: " << plane.y << " ";
 			plane.x += Baseline * 4;
 			plane.y += Baseline * 4;
@@ -94,27 +92,31 @@ int main(int argc, char** argv)
 			Color ray;
 				
 			// }
-			double alpha = plane.x - floor_x * Baseline;
-			double beta = plane.y - floor_y * Baseline;
-			cout << alpha << " " << beta << endl;
+			double alpha = (plane.x - floor_x * Baseline) / Baseline;
+			double beta = (plane.y - floor_y * Baseline) / Baseline;
+			//cout << alpha << " " << beta << endl;
 			Color pt, pta, ptb, ptab;
 			viewImageList[floor_x * View_Grid_Col + floor_y].getColor(c, r, pt.R, pt.G, pt.B);
 			viewImageList[floor_x * View_Grid_Col + ceil_y].getColor(c, r, pta.R, pta.G, pta.B);
 			viewImageList[ceil_x * View_Grid_Col + floor_y].getColor(c, r, ptb.R, ptb.G, ptb.B);
 			viewImageList[ceil_x * View_Grid_Col + ceil_y].getColor(c, r, ptab.R, ptab.G, ptab.B);
-			cout << ceil_x * View_Grid_Col + ceil_y << " " << ceil_x * View_Grid_Col + floor_y << " " << floor_x * View_Grid_Col + ceil_y << " " << floor_x * View_Grid_Col + floor_y << endl;
+			//cout << ceil_x * View_Grid_Col + ceil_y << " " << ceil_x * View_Grid_Col + floor_y << " " << floor_x * View_Grid_Col + ceil_y << " " << floor_x * View_Grid_Col + floor_y << endl;
 			Color p0, p1, ptarget;
 			p0.R = (1 - alpha) * pt.R + alpha * pta.R;
-			p1.R = (1 -alpha) * ptb.R + alpha * ptab.R;
+			p1.R = (1 - alpha) * ptb.R + alpha * ptab.R;
 			ptarget.R = (1 - beta) * p0.R + beta * p1.R;
 
 			p0.G = (1 - alpha) * pt.G + alpha * pta.G;
-			p1.G = (1 -alpha) * ptb.G + alpha * ptab.G;
+			p1.G = (1 - alpha) * ptb.G + alpha * ptab.G;
 			ptarget.G = (1 - beta) * p0.G + beta * p1.G;
 
 			p0.B = (1 - alpha) * pt.B + alpha * pta.B;
-			p1.B = (1 -alpha) * ptb.B + alpha * ptab.B;
+			p1.B = (1 - alpha) * ptb.B + alpha * ptab.B;
 			ptarget.B = (1 - beta) * p0.B + beta * p1.B;
+
+			// ptarget.R = 0.25 * (pt.R + pta.R + ptb.R + ptab.R);
+			// ptarget.G = 0.25 * (pt.G + pta.G + ptb.G + ptab.G);
+			// ptarget.B = 0.25 * (pt.B + pta.B + ptb.B + ptab.B);
 
 
 			//! record the resampled pixel value
