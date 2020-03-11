@@ -57,15 +57,15 @@ int main(int argc, char** argv)
 	Bitmap targetView(Resolution_Col, Resolution_Row);
 	cout << "Synthesizing image from viewpoint: (" << Vx << "," << Vy << "," << Vz << ") with focal length: " << targetFocalLen << endl;
 	//! resample pixels of the target view one by one
-	double grid_w = Image_Width / (double)Resolution_Row;
-	double grid_h = Image_Height / (double)Resolution_Col;
+	// double grid_w = Image_Width / (double)Resolution_Row;
+	// double grid_h = Image_Height / (double)Resolution_Col;
 	for (int r = 0; r < Resolution_Row; r++)
 	{
 		for (int c = 0; c < Resolution_Col; c++)
 		{
-			Point3d rayRGB(0, 0, 0);
+			// Point3d rayRGB(0, 0, 0);
 			//! resample the pixel value of this ray: TODO
-			Point3d pix(0, 0, 0);
+			// Point3d pix(0, 0, 0);
 			// pix.x = grid_w * r - Image_Width / 2 + grid_w / 2;
 			// pix.y = grid_h * c - Image_Height / 2 + grid_h / 2;
 			// pix.z = -targetFocalLen;
@@ -78,7 +78,7 @@ int main(int argc, char** argv)
 
 			//cout << "px: " << plane.x << " " << "py: " << plane.y << " ";
 			plane.x += Baseline * 4;
-			plane.y += Baseline * 4;
+			plane.y -= Baseline * 4;
 			int ceil_x = ceil(plane.x / Baseline);
 			int floor_x = floor(plane.x / Baseline);
 			int ceil_y = ceil(plane.y / Baseline);
@@ -88,8 +88,6 @@ int main(int argc, char** argv)
 
 			// Point2d offset(, plane.y % Baseline);
 			// offset.x = plane.x - ;
-
-			Color ray;
 				
 			// }
 			double alpha = (plane.x - floor_x * Baseline) / Baseline;
