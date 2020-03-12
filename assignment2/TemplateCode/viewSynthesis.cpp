@@ -76,22 +76,21 @@ int main(int argc, char** argv)
 			plane.x = Vx;
 			plane.y = Vy;
 
-			//cout << "px: " << plane.x << " " << "py: " << plane.y << " ";
 			plane.x += Baseline * 4;
 			plane.y += Baseline * 4;
 			int ceil_x = ceil(plane.x / Baseline);
 			int floor_x = floor(plane.x / Baseline);
 			int ceil_y = 8 - ceil(plane.y / Baseline);
 			int floor_y = 8 - floor(plane.y / Baseline);
-
+			//cout << "px: " << plane.x << " " << "py: " << plane.y << " ";
 			//cout << floor_x << " " << ceil_x << " " << ceil_y << " " << floor_y << " "  << endl;
 
 			// Point2d offset(, plane.y % Baseline);
 			// offset.x = plane.x - ;
 				
 			// }
-			double alpha = (plane.x - floor_x * Baseline) / Baseline;
-			double beta = (plane.y - floor_y * Baseline) / Baseline;
+			double alpha = (plane.x - double(floor_x) * Baseline) / Baseline;
+			double beta = - (((240 - plane.y) - double(floor_y) * Baseline) / Baseline);
 			//cout << alpha << " " << beta << endl;
 			Color pt, pta, ptb, ptab;
 			// viewImageList[floor_x * View_Grid_Col + floor_y].getColor(c, r, pt.R, pt.G, pt.B);
