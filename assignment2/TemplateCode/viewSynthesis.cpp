@@ -78,11 +78,11 @@ int main(int argc, char** argv)
 
 			//cout << "px: " << plane.x << " " << "py: " << plane.y << " ";
 			plane.x += Baseline * 4;
-			plane.y -= Baseline * 4;
+			plane.y += Baseline * 4;
 			int ceil_x = ceil(plane.x / Baseline);
 			int floor_x = floor(plane.x / Baseline);
-			int ceil_y = ceil(plane.y / Baseline);
-			int floor_y = floor(plane.y / Baseline);
+			int ceil_y = 8 - ceil(plane.y / Baseline);
+			int floor_y = 8 - floor(plane.y / Baseline);
 
 			//cout << floor_x << " " << ceil_x << " " << ceil_y << " " << floor_y << " "  << endl;
 
@@ -94,10 +94,14 @@ int main(int argc, char** argv)
 			double beta = (plane.y - floor_y * Baseline) / Baseline;
 			//cout << alpha << " " << beta << endl;
 			Color pt, pta, ptb, ptab;
-			viewImageList[floor_x * View_Grid_Col + floor_y].getColor(c, r, pt.R, pt.G, pt.B);
-			viewImageList[floor_x * View_Grid_Col + ceil_y].getColor(c, r, pta.R, pta.G, pta.B);
-			viewImageList[ceil_x * View_Grid_Col + floor_y].getColor(c, r, ptb.R, ptb.G, ptb.B);
-			viewImageList[ceil_x * View_Grid_Col + ceil_y].getColor(c, r, ptab.R, ptab.G, ptab.B);
+			// viewImageList[floor_x * View_Grid_Col + floor_y].getColor(c, r, pt.R, pt.G, pt.B);
+			// viewImageList[floor_x * View_Grid_Col + ceil_y].getColor(c, r, pta.R, pta.G, pta.B);
+			// viewImageList[ceil_x * View_Grid_Col + floor_y].getColor(c, r, ptb.R, ptb.G, ptb.B);
+			// viewImageList[ceil_x * View_Grid_Col + ceil_y].getColor(c, r, ptab.R, ptab.G, ptab.B);
+			viewImageList[floor_y * View_Grid_Row + floor_x].getColor(c, r, pt.R, pt.G, pt.B);
+			viewImageList[ceil_y * View_Grid_Row + floor_x].getColor(c, r, pta.R, pta.G, pta.B);
+			viewImageList[floor_y * View_Grid_Row + ceil_x].getColor(c, r, ptb.R, ptb.G, ptb.B);
+			viewImageList[ceil_y * View_Grid_Row + ceil_x].getColor(c, r, ptab.R, ptab.G, ptab.B);
 			//cout << ceil_x * View_Grid_Col + ceil_y << " " << ceil_x * View_Grid_Col + floor_y << " " << floor_x * View_Grid_Col + ceil_y << " " << floor_x * View_Grid_Col + floor_y << endl;
 			Color p0, p1, ptarget;
 			p0.R = (1 - alpha) * pt.R + alpha * pta.R;
