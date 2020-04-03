@@ -8,9 +8,9 @@
 * and regulations, as contained in the website
 * http://www.cuhk.edu.hk/policy/academichonesty/ *
 * Assignment 3
-* Name :
-* Student ID :
-* Email Addr :
+* Name : Lee Tsz Yan
+* Student ID : 1155110177
+* Email Addr : 1155110177@link.cuhk.edu.hk
 */
 
 
@@ -19,19 +19,41 @@
 #include <string.h>
 #include <assert.h>
 #include <ctype.h>
+#include <iostream>
+#include <string>
 
 #define CODE_SIZE  12
 #define TRUE 1
 #define FALSE 0
+#define TABLE_SIZE 4096
 
+using namespace std;
+
+typedef struct entry
+{
+	unsigned int index;
+	char c;
+	struct entry *previous;
+	struct entry *next;
+	struct entry *neighbor;
+}Entry;
+
+int table_size = TABLE_SIZE;
+Entry* dictionary = (Entry*)malloc(table_size * sizeof(Entry));
 
 /* function prototypes */
 unsigned int read_code(FILE*, unsigned int); 
 void write_code(FILE*, unsigned int, unsigned int); 
 void writefileheader(FILE *,char**,int);
 void readfileheader(FILE *,char**,int *);
-void compress(FILE*, FILE*);
-void decompress(FILE*, FILE*);
+void compress(FILE*, FILE*, int num_entry);
+void decompress(FILE*, FILE*, int num_entry);
+void init_table();
+int search_dict(char c, int index);
+int add_entry(char c, int index, int num);
+int search_dict_by_index(int num, int prev_index, int num_entry);
+char get_first_char(int index);
+int write_file(FILE *, int index);
 
 int main(int argc, char **argv)
 {
@@ -54,6 +76,15 @@ int main(int argc, char **argv)
 			writefileheader(lzw_file,input_file_names,no_of_file);
         	        	
 			/* ADD CODES HERE */
+			init_table();
+			int num_entry = 256;
+			for(int i = 0; i < no_of_file; i++){
+				FILE* input_file = fopen(input_file_names[i], "r");
+				fseek(input_file, 0, SEEK_SET);
+				compress(input_file, lzw_file, num_entry);
+				fclose(input_file);
+			}
+			write_code(lzw_file, TABLE_SIZE, CODE_SIZE);
         	
 			fclose(lzw_file);        	
 		} else
@@ -67,6 +98,17 @@ int main(int argc, char **argv)
 			readfileheader(lzw_file,&output_file_names,&no_of_file);
 			
 			/* ADD CODES HERE */
+			char *ptr = strtok(output_file_names, " \n");
+
+			init_table();
+			int num_entry = 256;
+			for(int i = 0; i < no_of_file; i++){
+				FILE* output_file = fopen(ptr, "w");
+				cout << ptr << endl;
+				decompress(lzw_file, output_file, num_entry);
+				ptr = strtok(NULL, " \n");
+				fclose(output_file);
+			}
 			
 			fclose(lzw_file);		
 			free(output_file_names);
@@ -208,11 +250,34 @@ void write_code(FILE *output, unsigned int code, unsigned int code_size)
  * compress() - compress the source file and output the coded text
  *
  ****************************************************************/
-void compress(FILE *input, FILE *output)
+void compress(FILE *input, FILE *output, int num_entry)
 {
 
 	/* ADD CODES HERE */
-
+	char c = getc(input);
+	int prev_index = -1;
+	if(c == EOF){
+		cout << "empty file" << endl;
+	}
+	while(c != EOF){
+		int search_result = search_dict(c, prev_index);
+		if(search_result != -1){
+			prev_index = search_result;
+		}
+		else{
+			//cout << "write code: " << prev_index << endl;
+			write_code(output, prev_index, CODE_SIZE);
+			num_entry = add_entry(c, prev_index, num_entry);
+			prev_index = search_dict(c, -1);
+		}
+		c = getc(input);
+	}
+	if(prev_index != -1){
+		//cout << "write code: " << prev_index << endl;
+		write_code(output, prev_index, CODE_SIZE);
+	}
+	write_code(output, TABLE_SIZE - 1, CODE_SIZE);
+	cout << "compress" << endl;
 }
 
 
@@ -221,9 +286,162 @@ void compress(FILE *input, FILE *output)
  * decompress() - decompress a compressed file to the orig. file
  *
  ****************************************************************/
-void decompress(FILE *input, FILE *output)
+void decompress(FILE *input, FILE *output, int num_entry)
 {	
 
 	/* ADD CODES HERE */
+	// init_table();
+	// int num_entry = 256;
+	// int prev_index = -1;
+	// int curr_index = -1;
+	// int pw = read_code(input, CODE_SIZE); // pw = previous char
+	// if(pw == TABLE_SIZE){
+	// 	return;
+	// }
+	// int c = search_dict_by_index(pw, prev_index, num_entry);  // 
+	// write_file(output, c, 1);
+	// int cw;
+	// while((cw = read_code(input, CODE_SIZE)) != EOF){
+	// 	int search_result = search_dict_by_index(cw, prev_index, num_entry);
+	// 	if(search_result != -1){
+	// 		prev_index = search_result;
+	// 		c = write_file(output, prev_index, 1);
+	// 	}
+	// 	else{
+	// 		c = write_file(output, prev_index, 0);// return top index ie first char
+	// 	}
+	// 	cout << "hi" << endl;
+	// 	int p = search_dict_by_index(pw, prev_index, num_entry);
+	// 	add_entry(get_char_by_index(cw), p, num_entry);
+	// 	num_entry++;
+	// 	pw = cw;
+	// }
 
+	int pw = read_code(input, CODE_SIZE);
+	cout << pw << " ";
+	char c = dictionary[pw].c;
+	fprintf(output, "%c", c);
+	int cw;
+	char s;
+	while((cw = read_code(input, CODE_SIZE)) != TABLE_SIZE - 1){
+		cout << cw << " ";
+		if(cw < num_entry){
+			//cout << "read: " << cw << endl;
+			c = get_first_char(cw);
+			// s = dictionary[cw].c; //no need - output cw is ok
+			//cout << "write " << dictionary[cw].c << endl;
+			write_file(output, cw);
+		}
+		else{
+			c = get_first_char(pw);
+			// s = pw+c;
+			write_file(output, pw);
+			fprintf(output, "%c", c);
+		}
+		//p = dictionary[pw].c;
+		add_entry(c, pw, num_entry);
+		num_entry++;
+		pw = cw;
+	}
+
+}
+
+void init_table(){
+	for(int i = 0; i < 255; i++){
+		dictionary[i].index = i;
+		dictionary[i].c = i;
+		dictionary[i].previous = NULL;
+		dictionary[i].next = NULL;
+		dictionary[i].neighbor = NULL;
+	}
+	cout << "init dictionary" << endl;
+}
+
+int search_dict(char c, int index){
+	if(index == -1){
+		return c;
+	}
+	Entry *e = dictionary[index].next;
+	while(e != NULL){
+		if(e->c == c) return e->index;
+		e = e->neighbor;
+	}
+	return -1;
+}
+
+int add_entry(char c, int index, int num){
+	//cout << "to add entry" << endl;
+	if(num == table_size - 1){
+		table_size *= 2;
+		realloc(dictionary, table_size * sizeof(Entry));
+		if(num == 4095) num = 4096;
+	}
+	dictionary[num].index = num;
+	dictionary[num].c = c;
+	dictionary[num].previous = &dictionary[index];
+	dictionary[num].next = NULL;
+	dictionary[num].neighbor = NULL;
+	//cout << "add entry: "<< num << ", char = " << dictionary[num].c;
+	//cout << ", prev_num: " << dictionary[num].previous->index << ", prev_char: " << dictionary[num].previous->c << endl;
+
+	if(dictionary[index].next == NULL){
+		dictionary[index].next = &dictionary[num];
+		//cout << "add first link" << endl;
+		return num + 1;
+	}
+
+	Entry *e = dictionary[index].next;
+	while(1){
+		if(e->neighbor == NULL){
+			e->neighbor = &dictionary[num];
+			//cout << "link to neighbor" << endl;
+			return num + 1;
+		}
+		e = e->neighbor;
+	}
+}
+
+char get_first_char(int index){
+	char c = dictionary[index].c;
+	Entry *e = dictionary[index].previous;
+	while(e != NULL){
+		c = e->c;
+		e = e->previous;
+	}
+	//cout << "first char: " << c << endl;
+	return c;
+}
+
+int search_dict_by_index(int num, int prev_index, int num_entry){
+	cout << "to search: num = " << num << endl;
+	if(num_entry < num) return -1;
+	if(dictionary[num].previous == NULL || dictionary[num].previous->index == prev_index){
+		return dictionary[num].c;
+	}
+	return -1;
+}
+
+int write_file(FILE * output, int index){
+	//cout << "to write" << endl;
+	string out = "";
+	char first = '\0';
+	if(dictionary[index].previous != NULL){
+		Entry *e = dictionary[index].previous;
+		while(e->previous != NULL){
+			out = e->next->c + out;
+			e = e->previous;
+		}
+		out = e->next->c + out;
+		out = e->c + out;
+		first = e->c;
+	}
+	else{
+		out = dictionary[index].c + out;
+		first = dictionary[index].c;
+	}
+	for(int i = 0; i < out.size(); i++){
+		fprintf(output, "%c", out[i]);
+	}
+	//cout << "print:                                        " << out << endl;
+	return first;
 }
