@@ -51,9 +51,8 @@ int decompress(FILE*, FILE*, int num_entry);
 void init_table();
 int search_dict(char c, int index);
 int add_entry(char c, int index, int num);
-int search_dict_by_index(int num, int prev_index, int num_entry);
 char get_first_char(int index);
-int write_file(FILE *, int index);
+void write_file(FILE *, int index);
 
 int main(int argc, char **argv)
 {
@@ -276,7 +275,7 @@ int compress(FILE *input, FILE *output, int num_entry)
 		}
 		c = fgetc(input);
 	}
-	if(prev_index != -1){
+	if(prev_index != 0){
 		//cout << "write code: " << prev_index << endl;
 		write_code(output, prev_index, CODE_SIZE);
 	}
@@ -296,11 +295,9 @@ int decompress(FILE *input, FILE *output, int num_entry)
 	int pw = read_code(input, CODE_SIZE);
 	// cout << pw << " ";
 	char c = dictionary[pw].c;
-	fprintf(output, "%c", c);
+	write_file(output, pw);
 	int cw;
-	char s;
 	while((cw = read_code(input, CODE_SIZE)) != TABLE_SIZE - 1){
-		// cout << cw << " ";
 		if(cw < num_entry){
 			// cout << "read: " << cw << endl;
 			c = get_first_char(cw);
@@ -315,7 +312,6 @@ int decompress(FILE *input, FILE *output, int num_entry)
 			// c = dictionary[pw].c;
 			write_file(output, pw);
 			fprintf(output, "%c", c);
-			cout << c;
 			cerr << "no entry! " << c << endl;
 		}
 		//p = dictionary[pw].c;
@@ -334,7 +330,7 @@ void init_table(){
 		dictionary[i].neighbor = NULL;
 	}
 	for(int i = 256; i < 4095; i++){
-		dictionary[i].index = 0;
+		dictionary[i].index = -2;
 		dictionary[i].c = '\0';
 		dictionary[i].previous = NULL;
 		dictionary[i].next = NULL;
@@ -397,29 +393,15 @@ char get_first_char(int index){
 	return c;
 }
 
-int search_dict_by_index(int num, int prev_index, int num_entry){
-	cout << "to search: num = " << num << endl;
-	if(num_entry < num) return -1;
-	if(dictionary[num].previous == NULL || dictionary[num].previous->index == prev_index){
-		return dictionary[num].c;
-	}
-	return -1;
-}
-
-int write_file(FILE * output, int index){
+void write_file(FILE * output, int index){
 	//cout << "to write" << endl;
 	string out(1, dictionary[index].c);
-	char first = '\0';
 	Entry *e = dictionary[index].previous;
 	while(e != NULL){
 		out = e->c + out;
-		first = e->c;
 		e = e->previous;
 	}
 	for(int i = 0; i < out.length(); i++){
 		fprintf(output, "%c", out[i]);
 	}
-	
-	//cout << "print:                                        " << out << endl;
-	return first;
 }
