@@ -46,8 +46,8 @@ unsigned int read_code(FILE*, unsigned int);
 void write_code(FILE*, unsigned int, unsigned int); 
 void writefileheader(FILE *,char**,int);
 void readfileheader(FILE *,char**,int *);
-void compress(FILE*, FILE*, int num_entry);
-void decompress(FILE*, FILE*, int num_entry);
+int compress(FILE*, FILE*, int num_entry);
+int decompress(FILE*, FILE*, int num_entry);
 void init_table();
 int search_dict(char c, int index);
 int add_entry(char c, int index, int num);
@@ -79,9 +79,10 @@ int main(int argc, char **argv)
 			init_table();
 			int num_entry = 256;
 			for(int i = 0; i < no_of_file; i++){
-				FILE* input_file = fopen(input_file_names[i], "r");
+				FILE* input_file = fopen(input_file_names[i], "rb");
 				fseek(input_file, 0, SEEK_SET);
-				compress(input_file, lzw_file, num_entry);
+				num_entry = compress(input_file, lzw_file, num_entry);
+				cout << num_entry << endl;
 				fclose(input_file);
 			}
 			write_code(lzw_file, TABLE_SIZE, CODE_SIZE);
@@ -103,9 +104,9 @@ int main(int argc, char **argv)
 			init_table();
 			int num_entry = 256;
 			for(int i = 0; i < no_of_file; i++){
-				FILE* output_file = fopen(ptr, "w");
+				FILE* output_file = fopen(ptr, "wb");
 				cout << ptr << endl;
-				decompress(lzw_file, output_file, num_entry);
+				num_entry = decompress(lzw_file, output_file, num_entry);
 				ptr = strtok(NULL, " \n");
 				fclose(output_file);
 			}
@@ -250,14 +251,17 @@ void write_code(FILE *output, unsigned int code, unsigned int code_size)
  * compress() - compress the source file and output the coded text
  *
  ****************************************************************/
-void compress(FILE *input, FILE *output, int num_entry)
+int compress(FILE *input, FILE *output, int num_entry)
 {
 
 	/* ADD CODES HERE */
-	char c = getc(input);
+	char c = fgetc(input);
 	int prev_index = -1;
 	if(c == EOF){
 		cout << "empty file" << endl;
+	}
+	if(ferror(input)){
+		cout << "error" << endl;
 	}
 	while(c != EOF){
 		int search_result = search_dict(c, prev_index);
@@ -270,7 +274,7 @@ void compress(FILE *input, FILE *output, int num_entry)
 			num_entry = add_entry(c, prev_index, num_entry);
 			prev_index = search_dict(c, -1);
 		}
-		c = getc(input);
+		c = fgetc(input);
 	}
 	if(prev_index != -1){
 		//cout << "write code: " << prev_index << endl;
@@ -278,6 +282,7 @@ void compress(FILE *input, FILE *output, int num_entry)
 	}
 	write_code(output, TABLE_SIZE - 1, CODE_SIZE);
 	cout << "compress" << endl;
+	return num_entry;
 }
 
 
@@ -286,48 +291,20 @@ void compress(FILE *input, FILE *output, int num_entry)
  * decompress() - decompress a compressed file to the orig. file
  *
  ****************************************************************/
-void decompress(FILE *input, FILE *output, int num_entry)
+int decompress(FILE *input, FILE *output, int num_entry)
 {	
-
-	/* ADD CODES HERE */
-	// init_table();
-	// int num_entry = 256;
-	// int prev_index = -1;
-	// int curr_index = -1;
-	// int pw = read_code(input, CODE_SIZE); // pw = previous char
-	// if(pw == TABLE_SIZE){
-	// 	return;
-	// }
-	// int c = search_dict_by_index(pw, prev_index, num_entry);  // 
-	// write_file(output, c, 1);
-	// int cw;
-	// while((cw = read_code(input, CODE_SIZE)) != EOF){
-	// 	int search_result = search_dict_by_index(cw, prev_index, num_entry);
-	// 	if(search_result != -1){
-	// 		prev_index = search_result;
-	// 		c = write_file(output, prev_index, 1);
-	// 	}
-	// 	else{
-	// 		c = write_file(output, prev_index, 0);// return top index ie first char
-	// 	}
-	// 	cout << "hi" << endl;
-	// 	int p = search_dict_by_index(pw, prev_index, num_entry);
-	// 	add_entry(get_char_by_index(cw), p, num_entry);
-	// 	num_entry++;
-	// 	pw = cw;
-	// }
-
 	int pw = read_code(input, CODE_SIZE);
-	cout << pw << " ";
+	// cout << pw << " ";
 	char c = dictionary[pw].c;
 	fprintf(output, "%c", c);
 	int cw;
 	char s;
 	while((cw = read_code(input, CODE_SIZE)) != TABLE_SIZE - 1){
-		cout << cw << " ";
+		// cout << cw << " ";
 		if(cw < num_entry){
-			//cout << "read: " << cw << endl;
+			// cout << "read: " << cw << endl;
 			c = get_first_char(cw);
+			// c = dictionary[cw].c;
 			// s = dictionary[cw].c; //no need - output cw is ok
 			//cout << "write " << dictionary[cw].c << endl;
 			write_file(output, cw);
@@ -335,21 +312,30 @@ void decompress(FILE *input, FILE *output, int num_entry)
 		else{
 			c = get_first_char(pw);
 			// s = pw+c;
+			// c = dictionary[pw].c;
 			write_file(output, pw);
 			fprintf(output, "%c", c);
+			cout << c;
+			cerr << "no entry! " << c << endl;
 		}
 		//p = dictionary[pw].c;
-		add_entry(c, pw, num_entry);
-		num_entry++;
+		num_entry = add_entry(c, pw, num_entry);
 		pw = cw;
 	}
-
+	return num_entry;
 }
 
 void init_table(){
 	for(int i = 0; i < 255; i++){
 		dictionary[i].index = i;
 		dictionary[i].c = i;
+		dictionary[i].previous = NULL;
+		dictionary[i].next = NULL;
+		dictionary[i].neighbor = NULL;
+	}
+	for(int i = 256; i < 4095; i++){
+		dictionary[i].index = 0;
+		dictionary[i].c = '\0';
 		dictionary[i].previous = NULL;
 		dictionary[i].next = NULL;
 		dictionary[i].neighbor = NULL;
@@ -372,9 +358,8 @@ int search_dict(char c, int index){
 int add_entry(char c, int index, int num){
 	//cout << "to add entry" << endl;
 	if(num == table_size - 1){
-		table_size *= 2;
-		realloc(dictionary, table_size * sizeof(Entry));
-		if(num == 4095) num = 4096;
+		init_table();
+		num = 256;
 	}
 	dictionary[num].index = num;
 	dictionary[num].c = c;
@@ -423,25 +408,18 @@ int search_dict_by_index(int num, int prev_index, int num_entry){
 
 int write_file(FILE * output, int index){
 	//cout << "to write" << endl;
-	string out = "";
+	string out(1, dictionary[index].c);
 	char first = '\0';
-	if(dictionary[index].previous != NULL){
-		Entry *e = dictionary[index].previous;
-		while(e->previous != NULL){
-			out = e->next->c + out;
-			e = e->previous;
-		}
-		out = e->next->c + out;
+	Entry *e = dictionary[index].previous;
+	while(e != NULL){
 		out = e->c + out;
 		first = e->c;
+		e = e->previous;
 	}
-	else{
-		out = dictionary[index].c + out;
-		first = dictionary[index].c;
-	}
-	for(int i = 0; i < out.size(); i++){
+	for(int i = 0; i < out.length(); i++){
 		fprintf(output, "%c", out[i]);
 	}
+	
 	//cout << "print:                                        " << out << endl;
 	return first;
 }
